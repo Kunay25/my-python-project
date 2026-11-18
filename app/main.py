@@ -1,24 +1,21 @@
 
-from app.db.db import SessionLocal
-from app.db.crud import get_categories, get_books
+from fastapi import FastAPI
+from sqlalchemy import text
+
+from app.api import books, categories
+from app.db.db import engine
 
 
-def main():
-    with SessionLocal() as db:
-        categories = get_categories(db)
-        books = get_books(db)
-
-        for category in categories:
-            print(f"\nКатегория: {category.title}")
-
-            for book in books:
-                if book.category_id == category.id:
-                    print(f"  Книга: {book.title}")
-                    print(f"  Описание: {book.description}")
-                    print(f"  Цена: {book.price} руб.")
-                    print(f"  Ссылка: {book.url or 'нет'}")
-                    print()
+app = FastAPI(title="Магазин книг")
 
 
-if __name__ == "__main__":
-    main()
+app.include_router(books.router)
+app.include_router(categories.router)
+
+
+@app.get("/health")
+def health():
+    with engine.connect() as connection:
+        connection.execute(text("SELECT 1"))
+
+    return {"status": "ok"}
